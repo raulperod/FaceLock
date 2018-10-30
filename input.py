@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-
 import numpy as np
 import cv2
 
 IMAGE_SIZE = 64
-GRAY_MODE = True # Transit images to grayscale images
+GRAY_MODE = False # Transit images to grayscale images
 DEBUG_OUTPUT = False # Output processed images
 DEBUG_VERBOSE = True # Print more detail
 EX_DATA = True # Label images by the name of the first subfolder
