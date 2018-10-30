@@ -2,11 +2,12 @@ import random
 import os
 import numpy as np
 
-from sklearn.cross_validation import train_test_split
+#from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
 from keras.models import load_model
 from keras import optimizers
@@ -91,26 +92,26 @@ class Model(object):
 
     def build_model(self, dataset, nb_classes=2):
         self.model = Sequential()
-
-        self.model.add(Convolution2D(32, 3, 3, border_mode = 'same', input_shape = dataset.X_train.shape[1:]))
+        print(dataset.X_train.shape[1:])
+        self.model.add(Conv2D(32, (3, 3), input_shape = dataset.X_train.shape[1:]))
         self.model.add(Activation('relu'))
-        self.model.add(Convolution2D(32, 3, 3))
+        self.model.add(Conv2D(32, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(self.DropoutWeights[0]))
         # self.model.add(Dropout(0.15))
 
-        self.model.add(Convolution2D(64, 3, 3, border_mode = 'same'))
+        self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
-        self.model.add(Convolution2D(64, 3, 3))
+        self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(self.DropoutWeights[1]))
         # self.model.add(Dropout(0.15))
 
-        self.model.add(Convolution2D(64, 3, 3, border_mode = 'same'))
+        self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
-        self.model.add(Convolution2D(64, 3, 3))
+        self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(self.DropoutWeights[2]))
@@ -159,8 +160,9 @@ class Model(object):
 
             self.model.fit_generator(
                 datagen.flow(dataset.X_train, dataset.Y_train, batch_size=batch_size),
-                samples_per_epoch=dataset.X_train.shape[0],
-                nb_epoch=nb_epoch,
+                steps_per_epoch=dataset.X_train.shape[0],
+                #nb_epoch=nb_epoch,
+                epochs=nb_epoch,
                 validation_data=(dataset.X_valid, dataset.Y_valid)
             )
 

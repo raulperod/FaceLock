@@ -7,7 +7,7 @@ import cv2
 IMAGE_SIZE = 64
 GRAY_MODE = True # Transit images to grayscale images
 DEBUG_OUTPUT = False # Output processed images
-DEBUG_VERBOSE = False # Print more detail
+DEBUG_VERBOSE = True # Print more detail
 EX_DATA = True # Label images by the name of the first subfolder
 
 def resize_with_pad(image, height=IMAGE_SIZE, width=IMAGE_SIZE):
@@ -50,7 +50,7 @@ def traverse_dir(path, images=[], labels=[]):
         if os.path.isdir(abs_path):  # dir
             traverse_dir(abs_path, images, labels)
         else:                        # file
-            if file_or_dir.endswith('.jpg'):
+            if file_or_dir.endswith('.jpg') or file_or_dir.endswith('.jpeg'):
                 image = read_image(abs_path)
                 if DEBUG_OUTPUT == True:
                     write_image('./output/' + path.split('\\')[-1] + os.path.basename(abs_path), image)
