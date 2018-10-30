@@ -9,15 +9,14 @@ from train import Model
 from input import resize_with_pad, write_image
 from input import IMAGE_SIZE, GRAY_MODE
 
-DEBUG_OUTPUT = True # Output captured images
+DEBUG_OUTPUT = False # Output captured images
 CropPadding = 10 # Padding when cropping faces from frames
-
 StrictMode = False
 MaxPromptDelay = 1000  # in microsecond
 MaxFailDelay = 5000 # in microsecond
 SampleInterval = 400 # in microsecond
 
-cascade_path = "F:/Software/opencv/sources/data/haarcascades/haarcascade_frontalface_default.xml"
+cascade_path = 'C:\\Anaconda\\Lib\\site-packages\\cv2\\data\\haarcascade_frontalface_default.xml'
 
 def extendFaceRect(rect):
     [x, y, w, h] = rect
@@ -46,13 +45,12 @@ if __name__ == '__main__':
 
     isme=0
     notme=0
-
     nDelay = 0
-
     # Run window in other thread
     cv2.startWindowThread()
-
-    while True:
+    c = 500
+    while c <= 600:
+        c+=1 # for image
         _, frame = cap.read()
 
         # To gray image
@@ -81,8 +79,6 @@ if __name__ == '__main__':
                 cv2.putText(buffer, "Count down: " + str(MaxFailDelay-nDelay) + " ms",
                     (10, 50), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0))
                 cv2.imshow('Recognizing', buffer)
-                # cv2.setWindowProperty("Recognizing", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-                #cv2.namedWindow('Recognizing', cv2.WINDOW_AUTOSIZE | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
 
             for rect in facerect:
                 [x, y, width, height] = extendFaceRect(rect)
@@ -107,11 +103,12 @@ if __name__ == '__main__':
                         write_image('./output/notme/' + str(random.randint(1,999999)) + '.jpg', outimg)
 
                 if result == 0:  # Is me
-                    print(timestamp(), "It's you! Donny!")
+                    print(timestamp(), "It's you! Raul!")
                     isme+=1
                     recStatus = 1
                 else:
-                    print(timestamp(), 'Not Donny.')
+                    print(timestamp(), 'Not Raul.')
+                    cv2.imwrite('./output_fail/image_{}.jpg'.format(c), frame[y: y + height, x: x + width])
                     notme+=1
                     if recStatus == 0:
                         recStatus = -1
@@ -119,7 +116,6 @@ if __name__ == '__main__':
                 print(timestamp(), 'isme', isme, 'notme', notme)
 
         # End if Face Detected
-
         if recStatus == -1 or (recStatus == 0 and (StrictMode or nDelay >= MaxPromptDelay)):
             nDelay += SampleInterval
             print(timestamp(), 'Last notme:', nDelay, 'ago')
@@ -135,11 +131,8 @@ if __name__ == '__main__':
             break
             
         cv2.waitKey(1)
-
         time.sleep(SampleInterval/1000)
-
     # End while True
-
     # Stop recognize
     cap.release()
     cv2.destroyAllWindows()

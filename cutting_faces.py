@@ -13,7 +13,8 @@ def extract_data(path, images=[]):
 
 if __name__ == '__main__':
 
-    folders = ['me', 'other']
+    #folders = ['me', 'other']
+    folders = ['me']
 
     for folder in folders:
         images = extract_data('./cutting_images/{}/'.format(folder), [])
