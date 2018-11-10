@@ -2,7 +2,6 @@ import random
 import os
 import numpy as np
 
-#from sklearn.cross_validation import train_test_split
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
@@ -15,11 +14,11 @@ from keras import backend as K
 
 from input import extract_data, resize_with_pad, IMAGE_SIZE, GRAY_MODE
 
-DEBUG_MUTE = True # Stop outputing unnecessary infomation
+DEBUG_MUTE = False # Stop outputing unnecessary infomation
 
 class DataSet(object):
 
-    TRAIN_DATA = './data/train/'
+    TRAIN_DATA = './data/'
 
     def __init__(self):
         self.X_train = None
@@ -75,7 +74,6 @@ class Model(object):
     FILE_PATH = './store/faces.model'
 
     DropoutWeights = [ 0.1, 0.1, 0.1, 0.2 ]
-    # DropoutWeights = [ 0.25, 0.25, 0.5 ]
 
     TrainEpoch = 20
     # For SGD: enough: 640; total fit: 800
@@ -92,36 +90,32 @@ class Model(object):
 
     def build_model(self, dataset, nb_classes=2):
         self.model = Sequential()
-        print(dataset.X_train.shape[1:])
-        self.model.add(Conv2D(32, (3, 3), input_shape = dataset.X_train.shape[1:]))
+        
+        self.model.add(Conv2D(32, (3, 3), border_mode = 'same', input_shape = dataset.X_train.shape[1:]))
         self.model.add(Activation('relu'))
         self.model.add(Conv2D(32, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(self.DropoutWeights[0]))
-        # self.model.add(Dropout(0.15))
 
-        self.model.add(Conv2D(64, (3, 3)))
+        self.model.add(Conv2D(64, (3, 3), border_mode = 'same'))
         self.model.add(Activation('relu'))
         self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(self.DropoutWeights[1]))
-        # self.model.add(Dropout(0.15))
 
-        self.model.add(Conv2D(64, (3, 3)))
+        self.model.add(Conv2D(64, (3, 3), border_mode = 'same'))
         self.model.add(Activation('relu'))
         self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(self.DropoutWeights[2]))
-        # self.model.add(Dropout(0.15))
 
         self.model.add(Flatten())
         self.model.add(Dense(512))
         self.model.add(Activation('relu'))
         self.model.add(Dropout(self.DropoutWeights[3]))
-        # self.model.add(Dropout(0.35))
         self.model.add(Dense(nb_classes))
         self.model.add(Activation('softmax'))
 
@@ -187,7 +181,8 @@ class Model(object):
             image = image.reshape((1, IMAGE_SIZE, IMAGE_SIZE, img_channels))
         image = image.astype('float32')
         image /= 255
-        if DEBUG_MUTE:
+        
+        if DEBUG_MUTE is False:
             result = self.model.predict_proba(image, verbose=0)
             result = self.model.predict_classes(image, verbose=0)
         else:
@@ -221,4 +216,3 @@ if __name__ == '__main__':
     model = Model()
     model.load()
     model.evaluate(dataset)
-

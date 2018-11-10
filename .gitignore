@@ -1,5 +1,5 @@
-*.jpg
-*.jpeg
 example/
 __pycache__/
 store/
+data/
+cutting_images/

@@ -48,37 +48,19 @@ if __name__ == '__main__':
     nDelay = 0
     # Run window in other thread
     cv2.startWindowThread()
-    c = 500
-    while c <= 600:
-        c+=1 # for image
+    for i in range(1000):
         _, frame = cap.read()
 
         # To gray image
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Recognize faces
-        facerect = cascade.detectMultiScale(
-            frame_gray,
-            scaleFactor=1.1,
-            minNeighbors=3,
-            minSize=(85, 85),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
+        facerect =  cascade.detectMultiScale(frame_gray, 1.3, 5)
 
         recStatus = 0
         if len(facerect) > 0:
-            print(timestamp(), 'Face detected.')
+            print(timestamp(), 'Cara detectada.')
             color = (255, 255, 255)  # 白
-
-            if nDelay >= MaxPromptDelay: # Show the recognize windows
-                for (x, y, w, h) in facerect:
-                    [x, y, w, h] = extendFaceRect([x, y, w, h])
-                    buffer = frame.copy()
-                    cv2.rectangle(buffer, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                
-                cv2.putText(buffer, "Count down: " + str(MaxFailDelay-nDelay) + " ms",
-                    (10, 50), cv2.FONT_HERSHEY_DUPLEX, 1, (0, 0, 0))
-                cv2.imshow('Recognizing', buffer)
 
             for rect in facerect:
                 [x, y, width, height] = extendFaceRect(rect)
@@ -95,43 +77,36 @@ if __name__ == '__main__':
                 else:
                     result = model.predict(img_predict)
 
-                if DEBUG_OUTPUT == True:
-                    outimg = frame[y: y + height, x: x + width]
-                    if result == 0:
-                        write_image('./output/isme/' + str(random.randint(1,999999)) + '.jpg', outimg)
-                    else:
-                        write_image('./output/notme/' + str(random.randint(1,999999)) + '.jpg', outimg)
-
                 if result == 0:  # Is me
-                    print(timestamp(), "It's you! Raul!")
+                    print(timestamp(), "!Eres tu Raul! :)")
                     isme+=1
                     recStatus = 1
                 else:
-                    print(timestamp(), 'Not Raul.')
-                    cv2.imwrite('./output_fail/image_{}.jpg'.format(c), frame[y: y + height, x: x + width])
+                    print(timestamp(), 'No eres Raul >:(')
                     notme+=1
                     if recStatus == 0:
                         recStatus = -1
 
-                print(timestamp(), 'isme', isme, 'notme', notme)
+                print(timestamp(), 'yo', isme, 'otro', notme)
 
         # End if Face Detected
         if recStatus == -1 or (recStatus == 0 and (StrictMode or nDelay >= MaxPromptDelay)):
             nDelay += SampleInterval
-            print(timestamp(), 'Last notme:', nDelay, 'ago')
+            print(timestamp(), 'Ultimo otro hace', nDelay, 's')
         elif recStatus == 1:
             nDelay = 0
-            cv2.destroyWindow('Recognizing')
+            cv2.destroyWindow('Reconociendo.')
 
         if nDelay >= MaxFailDelay: # Lock Windows
-            print(timestamp(), "Locking computer.")
+            print(timestamp(), "Bloqueando computadora.")
             ctypes.windll.user32.LockWorkStation()
             nDelay = 0
-            cv2.destroyWindow('Recognizing')
+            cv2.destroyWindow('Reconociendo')
             break
             
         cv2.waitKey(1)
-        time.sleep(SampleInterval/1000)
+        time.sleep(SampleInterval/500)
+           
     # End while True
     # Stop recognize
     cap.release()
