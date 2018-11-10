@@ -55,5 +55,5 @@ GRAY_MODE = True
 ## Agradecimientos  
 El proyecto de FaceLock fue hecho por [Donny-Hikari](https://github.com/Donny-Hikari) que a su vez se inspiro en el proyecto de [BossSensor](https://github.com/Hironsan/BossSensor) de [Hirosan](https://github.com/Hironsan).
 
-## Licence  
+## Licencia  
 [MIT Licence](./LICENSE)  
