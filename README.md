@@ -15,7 +15,7 @@ Debes contar con cámara web y Windows 10
 Para entrenar necesitaras muchas fotos tuyas y de otras personas, las fotos tuyas deberán ir en la carpeta
 [data/me](./data/me) y las demás en [data/other](./data/other).
 
-![face_example](./readme_res/face_example.jpg){: width=128px}
+![face_example](./readme_res/face_example.jpg){: width=50%}
 
 Para entrenar poner:
 
