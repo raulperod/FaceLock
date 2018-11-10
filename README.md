@@ -41,7 +41,7 @@ Para la obtención de fotografías utilice la base de datos [chicago_faces](http
 tu nombre, correo, el uso, entre otras cosas. También puedes buscar fotos en redes sociales.
 
 ## Recortar fotos
-En adición puedes utilizar [cutting_images.py](./cutting_images.py) para recortar las caras en las fotos de manera automática, las imágenes se deben guardar en [./cutting_images](./cutting_images) y separar las fotos como en el entrenamiento ([me](./cutting_images/me) y [other](./cutting_images/other)). Las fotos recortadas se guardaran en [./cutting_images/cut/me](./cutting_images/cut/me) y [./cutting_images/cut/other](./cutting_images/cut/other) respectivamente.
+En adición puedes utilizar [cutting_images.py](./cutting_images.py) para recortar las caras en las fotos de manera automática, las imágenes se deben guardar en [./cutting_images](./cutting_images) y separar las fotos como en el entrenamiento ([./cutting_images/me](./cutting_images/me) y [./cutting_images/other](./cutting_images/other)). Las fotos recortadas se guardaran en [./cutting_images/cut/me](./cutting_images/cut/me) y [./cutting_images/cut/other](./cutting_images/cut/other) respectivamente.
 
 ## Acerca del Modo Gris
 Puedes utilizar el modo gris para obtener mejores resultados. Para cambiar entre el modo gris y el normal
