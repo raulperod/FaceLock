@@ -4,21 +4,25 @@ import numpy as np
 
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.models import Sequential, Model, load_model
+from keras.layers import Dense, Dropout, Activation, Flatten, GlobalAveragePooling2D
 from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
-from keras.models import load_model
 from keras import optimizers
 from keras import backend as K
+from input import extract_data, resize_with_pad, IMAGE_SIZE
+from keras.applications import InceptionResNetV2, VGG16, VGG19, ResNet50
+#from keras.applications.inception_resnet_v2 import preprocess_input
+from keras.applications.vgg16 import preprocess_input
+#from keras.applications.vgg19 import preprocess_input
+from keras.applications.resnet50 import preprocess_input
 
-from input import extract_data, resize_with_pad, IMAGE_SIZE, GRAY_MODE
 
-DEBUG_MUTE = False # Stop outputing unnecessary infomation
+DEBUG_MUTE = True # Stop outputing unnecessary 
 
 class DataSet(object):
 
-    TRAIN_DATA = './data/'
+    TRAIN_DATA = './data/train2/'
 
     def __init__(self):
         self.X_train = None
@@ -68,14 +72,11 @@ class DataSet(object):
         self.Y_valid = Y_valid
         self.Y_test = Y_test
 
-
 class Model(object):
 
-    FILE_PATH = './store/faces.model'
-
-    DropoutWeights = [ 0.1, 0.1, 0.1, 0.2 ]
-
-    TrainEpoch = 20
+    FILE_PATH = './models/faces.h5'
+    
+    TrainEpoch = 1
     # For SGD: enough: 640; total fit: 800
     # For Adam: enough: 140(0.9864); fit: 220(0.9922)
 
@@ -88,77 +89,57 @@ class Model(object):
         else:
             return False
 
-    def build_model(self, dataset, nb_classes=2):
+    def build_model(self, nb_classes=2):
+  
         self.model = Sequential()
-        
-        self.model.add(Conv2D(32, (3, 3), border_mode = 'same', input_shape = dataset.X_train.shape[1:]))
-        self.model.add(Activation('relu'))
-        self.model.add(Conv2D(32, (3, 3)))
-        self.model.add(Activation('relu'))
-        self.model.add(MaxPooling2D(pool_size=(2,2)))
-        self.model.add(Dropout(self.DropoutWeights[0]))
-
-        self.model.add(Conv2D(64, (3, 3), border_mode = 'same'))
-        self.model.add(Activation('relu'))
-        self.model.add(Conv2D(64, (3, 3)))
-        self.model.add(Activation('relu'))
-        self.model.add(MaxPooling2D(pool_size=(2,2)))
-        self.model.add(Dropout(self.DropoutWeights[1]))
-
-        self.model.add(Conv2D(64, (3, 3), border_mode = 'same'))
-        self.model.add(Activation('relu'))
-        self.model.add(Conv2D(64, (3, 3)))
-        self.model.add(Activation('relu'))
-        self.model.add(MaxPooling2D(pool_size=(2,2)))
-        self.model.add(Dropout(self.DropoutWeights[2]))
-
-        self.model.add(Flatten())
-        self.model.add(Dense(512))
-        self.model.add(Activation('relu'))
-        self.model.add(Dropout(self.DropoutWeights[3]))
+        #self.model.add(InceptionResNetV2(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
+        #self.model.add(VGG19(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
+        self.model.add(VGG16(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
         self.model.add(Dense(nb_classes))
         self.model.add(Activation('softmax'))
 
-        self.model.summary()
+        # Say not to train first layer (ResNet) model. It is already trained
+        self.model.layers[0].trainable = False
+        self.model.summary() 
 
-    def train(self, dataset, batch_size=32, nb_epoch=40, data_augmentation=True):
-        # sgd = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-6, nesterov=True)
-        adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0)
+    def train(self, batch_size=32, nb_epoch=40):
+
+        dataset = DataSet()
+        dataset.read()    
+
+        sgd = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-6, nesterov=True)
+        #adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0)
+       
         self.model.compile(loss='categorical_crossentropy',
-                            optimizer=adam,
+                            optimizer=sgd,
                             metrics=['accuracy'])
-        if not data_augmentation:
-            print('Not using data augmentation.')
-            self.model.fit(dataset.X_train, dataset.Y_train,
-                            batch_size=batch_size,
-                            nb_epoch=nb_epoch,
-                            validation_data=(dataset.X_valid, dataset.Y_valid),
-                            shuffle=True)
-        else:
-            print('Using real-time data augmentation.')
+        
+        print('Using real-time data augmentation.')
 
-            datagen = ImageDataGenerator(
-                featurewise_center=False,
-                samplewise_center=False,
-                featurewise_std_normalization=False,
-                samplewise_std_normalization=False,
-                zca_whitening=False,
-                rotation_range=20,
-                width_shift_range=0.2,
-                height_shift_range=0.2,
-                horizontal_flip=True,
-                vertical_flip=False
-            )
+        data_generator = ImageDataGenerator(preprocessing_function=preprocess_input)
 
-            datagen.fit(dataset.X_train)
+        train_generator = data_generator.flow(
+            dataset.X_train,
+            dataset.Y_train,
+            batch_size=batch_size
+        )
 
-            self.model.fit_generator(
-                datagen.flow(dataset.X_train, dataset.Y_train, batch_size=batch_size),
-                steps_per_epoch=dataset.X_train.shape[0],
-                #nb_epoch=nb_epoch,
-                epochs=nb_epoch,
-                validation_data=(dataset.X_valid, dataset.Y_valid)
-            )
+        validation_generator = data_generator.flow(
+            dataset.X_valid,
+            dataset.Y_valid,
+            batch_size=batch_size
+        )
+
+        self.model.fit_generator(
+            train_generator,
+            steps_per_epoch=dataset.X_train.shape[0],
+            epochs=nb_epoch,
+            validation_data=validation_generator,
+            validation_steps=dataset.X_valid.shape[0]
+        )
+
+        score = self.model.evaluate(dataset.X_test, dataset.Y_test, verbose=0)
+        print("%s: %.2f%%" % (self.model.metrics_names[1], score[1]*100))
 
     def save(self, file_path=FILE_PATH):
         file_dir = os.path.dirname(file_path)
@@ -179,8 +160,6 @@ class Model(object):
         elif K.image_dim_ordering() == 'tf' and image.shape != (1, IMAGE_SIZE, IMAGE_SIZE, img_channels):
             image = resize_with_pad(image)
             image = image.reshape((1, IMAGE_SIZE, IMAGE_SIZE, img_channels))
-        image = image.astype('float32')
-        image /= 255
         
         if DEBUG_MUTE is False:
             result = self.model.predict_proba(image, verbose=0)
@@ -193,26 +172,10 @@ class Model(object):
 
         return result[0]
 
-    def evaluate(self, dataset):
-        score = self.model.evaluate(dataset.X_test, dataset.Y_test, verbose=0)
-        print("%s: %.2f%%" % (self.model.metrics_names[1], score[1]*100))
-
-
 if __name__ == '__main__':
-    dataset = DataSet()
-    if GRAY_MODE:
-        dataset.read(img_channels=1)
-    else:
-        dataset.read()
-
     model = Model()
-    if model.check_existance():
-        model.load()
-    else:
-        model.build_model(dataset)
-    model.train(dataset, nb_epoch=model.TrainEpoch)
+
+    model.build_model()
+    
+    model.train(nb_epoch=model.TrainEpoch)
     model.save()
-
-    model = Model()
-    model.load()
-    model.evaluate(dataset)

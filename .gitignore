@@ -1,5 +1,6 @@
 example/
 __pycache__/
-store/
+models/
 data/
 cutting_images/
+output/

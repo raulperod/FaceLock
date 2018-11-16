@@ -7,7 +7,7 @@ import ctypes
 
 from train import Model
 from input import resize_with_pad, write_image
-from input import IMAGE_SIZE, GRAY_MODE
+from input import IMAGE_SIZE
 
 DEBUG_OUTPUT = False # Output captured images
 CropPadding = 10 # Padding when cropping faces from frames
@@ -66,16 +66,10 @@ if __name__ == '__main__':
                 [x, y, width, height] = extendFaceRect(rect)
                 
                 # Crop the face
-                if GRAY_MODE == True:
-                    img_predict = frame_gray[y: y + height, x: x + width]
-                else:
-                    img_predict = frame[y: y + height, x: x + width]
+                img_predict = frame[y: y + height, x: x + width]
 
                 # Predict face
-                if GRAY_MODE == True:
-                    result = model.predict(img_predict, img_channels=1)
-                else:
-                    result = model.predict(img_predict)
+                result = model.predict(img_predict)
 
                 if result == 0:  # Is me
                     print(timestamp(), "!Eres tu Raul! :)")

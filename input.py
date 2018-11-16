@@ -4,7 +4,6 @@ import numpy as np
 import cv2
 
 IMAGE_SIZE = 64
-GRAY_MODE = True # Transit images to grayscale images
 DEBUG_OUTPUT = False # Output processed images
 DEBUG_VERBOSE = False # Print more detail
 EX_DATA = True # Label images by the name of the first subfolder
@@ -12,10 +11,7 @@ EX_DATA = True # Label images by the name of the first subfolder
 def resize_with_pad(image, height=IMAGE_SIZE, width=IMAGE_SIZE):
 
     def get_padding_size(image):
-        if GRAY_MODE:
-            h, w = image.shape
-        else:
-            h, w, _ = image.shape
+        h, w, _ = image.shape
         longest_edge = max(h, w)
         top, bottom, left, right = (0, 0, 0, 0)
         if h < longest_edge:
@@ -58,14 +54,9 @@ def traverse_dir(path, images=[], labels=[]):
 
     return images, labels
 
-
 def read_image(file_path):
     image = cv2.imread(file_path)
-    if GRAY_MODE == True:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     image = resize_with_pad(image, IMAGE_SIZE, IMAGE_SIZE)
-
     return image
 
 def write_image(file_path, image):
