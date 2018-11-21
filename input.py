@@ -3,7 +3,7 @@ import os
 import numpy as np
 import cv2
 
-IMAGE_SIZE = 64
+IMAGE_SIZE = 224
 DEBUG_OUTPUT = False # Output processed images
 DEBUG_VERBOSE = False # Print more detail
 EX_DATA = True # Label images by the name of the first subfolder

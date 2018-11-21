@@ -2,27 +2,30 @@ import random
 import os
 import numpy as np
 
+import keras
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential, Model, load_model
+from keras.engine import  Model
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Activation, Flatten, GlobalAveragePooling2D
 from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
 from keras import optimizers
 from keras import backend as K
 from input import extract_data, resize_with_pad, IMAGE_SIZE
-from keras.applications import InceptionResNetV2, VGG16, VGG19, ResNet50
+#from keras.applications import InceptionResNetV2, VGG16, VGG19, ResNet50
 #from keras.applications.inception_resnet_v2 import preprocess_input
-from keras.applications.vgg16 import preprocess_input
+#from keras.applications.vgg16 import preprocess_input
 #from keras.applications.vgg19 import preprocess_input
-from keras.applications.resnet50 import preprocess_input
+#from keras.applications.resnet50 import preprocess_input
 
+from keras_vggface.vggface import VGGFace
 
 DEBUG_MUTE = True # Stop outputing unnecessary 
 
 class DataSet(object):
 
-    TRAIN_DATA = './data/train2/'
+    TRAIN_DATA = './data/train/'
 
     def __init__(self):
         self.X_train = None
@@ -76,10 +79,8 @@ class Model(object):
 
     FILE_PATH = './models/faces.h5'
     
-    TrainEpoch = 1
-    # For SGD: enough: 640; total fit: 800
-    # For Adam: enough: 140(0.9864); fit: 220(0.9922)
-
+    TrainEpoch = 20
+    
     def __init__(self):
         self.model = None
 
@@ -89,11 +90,12 @@ class Model(object):
         else:
             return False
 
-    def build_model(self, nb_classes=2):
-  
+    def build_model(self, nb_classes=2, hidden_dim=512):
+        
+        """ KERAS MODEL WITH IMAGENET
         self.model = Sequential()
-        #self.model.add(InceptionResNetV2(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
-        #self.model.add(VGG19(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
+        self.model.add(InceptionResNetV2(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
+        self.model.add(VGG19(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
         self.model.add(VGG16(include_top=False, pooling='avg', weights="imagenet", input_shape=(IMAGE_SIZE,IMAGE_SIZE,3)))
         self.model.add(Dense(nb_classes))
         self.model.add(Activation('softmax'))
@@ -101,21 +103,42 @@ class Model(object):
         # Say not to train first layer (ResNet) model. It is already trained
         self.model.layers[0].trainable = False
         self.model.summary() 
+        """
+        """  VGG16 
+        vgg_model = VGGFace(include_top=False, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3))
+        last_layer = vgg_model.get_layer('pool5').output
+        x = Flatten(name='flatten')(last_layer)
+        x = Dense(hidden_dim, activation='relu', name='fc6')(x)
+        x = Dense(hidden_dim, activation='relu', name='fc7')(x)
+        out = Dense(nb_classes, activation='softmax', name='fc8')(x)
+        custom_vgg_model = keras.engine.Model(vgg_model.input, out)
+        """
+        # RESNET50
+        vgg_model = VGGFace(include_top=False, model='resnet50', input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3))
+        last_layer = vgg_model.get_layer('avg_pool').output
+        x = Flatten(name='flatten')(last_layer)
+        out = Dense(nb_classes, activation='softmax', name='classifier')(x)
+        custom_vgg_model = keras.engine.Model(vgg_model.input, out)
+        
+        self.model = custom_vgg_model
+
+        self.model.summary()
 
     def train(self, batch_size=32, nb_epoch=40):
 
         dataset = DataSet()
         dataset.read()    
 
-        sgd = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-6, nesterov=True)
-        #adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0)
-       
+        #sgd = optimizers.SGD(lr=0.01, momentum=0.9, decay=1e-6, nesterov=True)
+        adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0)
+
         self.model.compile(loss='categorical_crossentropy',
-                            optimizer=sgd,
+                            optimizer=adam,
                             metrics=['accuracy'])
         
+        """
         print('Using real-time data augmentation.')
-
+        
         data_generator = ImageDataGenerator(preprocessing_function=preprocess_input)
 
         train_generator = data_generator.flow(
@@ -137,6 +160,10 @@ class Model(object):
             validation_data=validation_generator,
             validation_steps=dataset.X_valid.shape[0]
         )
+        """
+
+        self.model.fit(dataset.X_train, dataset.Y_train, batch_size=batch_size, epochs=nb_epoch,
+                    validation_data=(dataset.X_valid, dataset.Y_valid))
 
         score = self.model.evaluate(dataset.X_test, dataset.Y_test, verbose=0)
         print("%s: %.2f%%" % (self.model.metrics_names[1], score[1]*100))
