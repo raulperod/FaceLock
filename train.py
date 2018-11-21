@@ -83,7 +83,7 @@ class Model(object):
 
     FILE_PATH = './models/faces.h5'
     
-    TrainEpoch = 1
+    TrainEpoch = 20
     
     def __init__(self):
         self.model = None
@@ -192,7 +192,7 @@ class Model(object):
 
         result = self.model.predict(np.array([image]))[0]
         whois = 0 if (result[0] > result[1]) else 1
-        
+
         return whois 
 
 if __name__ == '__main__':
