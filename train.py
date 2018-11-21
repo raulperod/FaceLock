@@ -20,6 +20,10 @@ from input import extract_data, resize_with_pad, IMAGE_SIZE
 #from keras.applications.resnet50 import preprocess_input
 
 from keras_vggface.vggface import VGGFace
+from keras.preprocessing import image
+from keras_vggface.vggface import VGGFace
+from keras_vggface import utils
+
 
 DEBUG_MUTE = True # Stop outputing unnecessary 
 
@@ -79,7 +83,7 @@ class Model(object):
 
     FILE_PATH = './models/faces.h5'
     
-    TrainEpoch = 20
+    TrainEpoch = 1
     
     def __init__(self):
         self.model = None
@@ -117,7 +121,8 @@ class Model(object):
         vgg_model = VGGFace(include_top=False, model='resnet50', input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3))
         last_layer = vgg_model.get_layer('avg_pool').output
         x = Flatten(name='flatten')(last_layer)
-        out = Dense(nb_classes, activation='softmax', name='classifier')(x)
+        x = Dense(nb_classes)(x)
+        out = Activation('softmax')(x)
         custom_vgg_model = keras.engine.Model(vgg_model.input, out)
         
         self.model = custom_vgg_model
@@ -180,24 +185,15 @@ class Model(object):
         self.model = load_model(file_path)
         print('Model Loaded.')
 
-    def predict(self, image, img_channels=3):
-        if K.image_dim_ordering() == 'th' and image.shape != (1,img_channels, IMAGE_SIZE, IMAGE_SIZE):
-            image = resize_with_pad(image)
-            image = image.reshape((1, img_channels, IMAGE_SIZE, IMAGE_SIZE))
-        elif K.image_dim_ordering() == 'tf' and image.shape != (1, IMAGE_SIZE, IMAGE_SIZE, img_channels):
-            image = resize_with_pad(image)
-            image = image.reshape((1, IMAGE_SIZE, IMAGE_SIZE, img_channels))
-        
-        if DEBUG_MUTE is False:
-            result = self.model.predict_proba(image, verbose=0)
-            result = self.model.predict_classes(image, verbose=0)
-        else:
-            result = self.model.predict_proba(image)
-            print(result)
-            result = self.model.predict_classes(image)
-            print(result)
+    def predict(self, predict_image):
+        image = resize_with_pad(predict_image)
+        image = image.astype('float32')
+        image /= 255
 
-        return result[0]
+        result = self.model.predict(np.array([image]))[0]
+        whois = 0 if (result[0] > result[1]) else 1
+        
+        return whois 
 
 if __name__ == '__main__':
     model = Model()
